@@ -22,7 +22,7 @@ app.use("/customer/auth", function auth(req,res,next){
             }
         })
     }else{
-        res.status(403).json({message:"Customer not logged int"})
+        res.status(403).json({message:"Customer not logged in"})
     }
 });
  
