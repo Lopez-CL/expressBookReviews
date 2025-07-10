@@ -23,53 +23,55 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/', async (req, res) => {
-  try{
-    const booksData =  await getBooks();
-    return res.status(200).json({message: 'book retireval successful!', booksData});
-  }catch(err){
-    return res.status(401).json({err, message: 'Error in retriewing books'})
-  }
-  function getBooks(){
-    return new Promise((resv,rej)=>{
-      resv(books);
-    }) 
-  }
+public_users.get('/', (req, res) => {
+    return Promise.resolve(books)
+    .then(data => res.status(200).json({message: 'book retireval successful!', books: data}))
+    .catch(err => res.status(500).json({err, message: 'Error in retriewing books'}))
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
   let {isbn} = req.params
   const bookByIsbn = books[isbn]
-  if(!bookByIsbn){
-    return res.status(404).json({message: "No book by that isbn!"})
-  }
-  return res.status(200).json(bookByIsbn);
- });
+  return Promise.resolve(books[isbn])
+  .then(bookFound => {
+    if(!bookFound) throw new Error("Book not found")
+    return res.status(200).json(bookByIsbn)})
+  .catch(err=> res.status(404).json({error: err.message}))
+  });
   
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
   //Write your code here
   let {author} = req.params;
-  // author = author.replaceAll("-", " ")
   let  bookByAuthor;
     for(let isbn in books){
       if(books[isbn].author.toLowerCase() === author.toLowerCase()){
         bookByAuthor = books[isbn];}
     }
-    if(!bookByAuthor){return res.status(404).json({message:"No book by that author!"})}
-    return res.status(200).json(bookByAuthor);
+    return Promise.resolve(bookByAuthor)
+    .then(book =>{
+      if(!book) throw new Error(`No book by ${author}`)
+      return res.status(200).json(book)
+    })
+    .catch(err => res.status(404).json({error: err.message}))
   });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
   const {title} = req.params;
+  let bookByTitle
   for(let isbn in books){
     if(books[isbn].title.toLowerCase() === title.toLowerCase()){
-      return res.status(200).json(books[isbn]);
+      bookByTitle = books[isbn]
     }
   }
-  return res.status(404).json({message: "Unable to locate book by title"})
+  return Promise.resolve(bookByTitle)
+  .then(book =>{
+    if(!book) throw new Error("No book by that title!")
+      return res.status(200).json(book)
+  })
+  .catch(err=> res.status(404).json({error: err.message}))
 });
 
 //  Get book review
